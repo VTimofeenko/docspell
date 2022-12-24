@@ -178,8 +178,8 @@ let
 
       wkhtmlpdf = {
         command = {
-          program = "${pkgs.wkhtmltopdf}/bin/wkhtmltopdf";
-          args = [ "-s" "A4" "--encoding" "UTF-8" "-" "{{outfile}}" ];
+          program = "${pkgs.python310Packages.weasyprint}/bin/weasyprint";
+          args = [ "--encoding" "UTF-8" "-" "{{outfile}}" ];
           timeout = "2 minutes";
         };
         working-dir = "/tmp/docspell-convert";
