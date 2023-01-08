@@ -6,6 +6,7 @@ let
   # Extract the config without the extraConfig attribute. It will be merged later
   declared_config = attrsets.filterAttrs (n: v: n != "extraConfig") cfg;
   user = if cfg.runAs == null then "docspell" else cfg.runAs;
+
   configFile = pkgs.writeText "docspell-joex.conf" ''
     {"docspell": { "joex":
       ${builtins.toJSON (lib.recursiveUpdate declared_config cfg.extraConfig)}
@@ -176,10 +177,17 @@ let
         '';
       };
 
-      wkhtmlpdf = {
+      weasyprint = {
         command = {
           program = "${pkgs.python310Packages.weasyprint}/bin/weasyprint";
-          args = [ "--encoding" "UTF-8" "-" "{{outfile}}" ];
+          args = [
+            "--optimize-size"
+            "all"
+            "--encoding"
+            "{{encoding}}"
+            "-"
+            "{{outfile}}"
+          ];
           timeout = "2 minutes";
         };
         working-dir = "/tmp/docspell-convert";
@@ -1207,12 +1215,18 @@ in
                 converted to a PDF file.
               '';
             };
-            wkhtmlpdf = mkOption {
+            html-converter = mkOption {
+              type = types.enum [ "wkhtmltopdf" "weasyprint" ];
+              default = "weasyprint";
+              description = '' Which tool to use for converting html to pdfs'';
+            };
+
+            weasyprint = mkOption {
               type = types.submodule ({
                 options = {
                   working-dir = mkOption {
                     type = types.str;
-                    default = defaults.convert.wktmlpdf.working-dir;
+                    default = defaults.convert.weasyprint.working-dir;
                     description = "Directory where the conversion processes can put their temp files";
                   };
                   command = mkOption {
@@ -1220,32 +1234,32 @@ in
                       options = {
                         program = mkOption {
                           type = types.str;
-                          default = defaults.convert.wkhtmlpdf.command.program;
+                          default = defaults.convert.weasyprint.command.program;
                           description = "The path to the executable.";
                         };
                         args = mkOption {
                           type = types.listOf types.str;
-                          default = defaults.convert.wkhtmlpdf.command.args;
+                          default = defaults.convert.weasyprint.command.args;
                           description = "The arguments to the program";
                         };
                         timeout = mkOption {
                           type = types.str;
-                          default = defaults.convert.wkhtmlpdf.command.timeout;
+                          default = defaults.convert.weasyprint.command.timeout;
                           description = "The timeout when executing the command";
                         };
                       };
                     });
-                    default = defaults.convert.wkhtmlpdf.command;
+                    default = defaults.convert.weasyprint.command;
                     description = "The system command";
                   };
                 };
               });
-              default = defaults.convert.wkhtmlpdf;
+              default = defaults.convert.weasyprint;
               description = ''
-                To convert HTML files into PDF files, the external tool
-                wkhtmltopdf is used.
+                To convert HTML files into PDF files, the external tool weasyprint is used.
               '';
             };
+            wkhtmlpdf = { };
             tesseract = mkOption {
               type = types.submodule ({
                 options = {
